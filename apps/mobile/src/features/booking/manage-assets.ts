@@ -1,0 +1,13 @@
+import a0 from "../../assets/booking/l0_imgRetour.svg";
+import a1 from "../../assets/booking/l0_imgVector.svg";
+import a2 from "../../assets/booking/l0_imgChnLyDo.svg";
+import a3 from "../../assets/booking/l0_imgDaChn.svg";
+import a4 from "../../assets/booking/l1_imgVector.svg";
+import a5 from "../../assets/booking/l2_imgDiLchThanhCong.svg";
+import a6 from "../../assets/booking/l2_imgVector.svg";
+import a7 from "../../assets/booking/l3_imgVector.svg";
+import a8 from "../../assets/booking/l4_imgVector.svg";
+import a9 from "../../assets/booking/l5_imgRetour.svg";
+import a10 from "../../assets/booking/l5_imgVector.svg";
+import a11 from "../../assets/booking/l5_imgVector1.svg";
+export const manageAssets:Record<string,number>={"l0_imgRetour":a0,"l0_imgVector":a1,"l0_imgChnLyDo":a2,"l0_imgDaChn":a3,"l1_imgVector":a4,"l2_imgDiLchThanhCong":a5,"l2_imgVector":a6,"l3_imgVector":a7,"l4_imgVector":a8,"l5_imgRetour":a9,"l5_imgVector":a10,"l5_imgVector1":a11};

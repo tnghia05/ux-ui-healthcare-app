@@ -1,0 +1,62 @@
+import { test,expect } from './fixtures.mjs';
+test.use({viewport:{width:390,height:844}});
+async function imagesReady(page){await expect.poll(()=>page.locator('img').evaluateAll(images=>images.every(image=>image.complete && image.naturalWidth>0))).toBe(true);}
+test('home search, hospital and doctor details, favorites and recovery',async({page,request})=>{
+ const email=`home-ui-${Date.now()}@example.com`,password='private-home-test-password';
+ const registration=await request.post('http://127.0.0.1:3002/api/v1/auth/register',{data:{email,password,name:'Home UI test'}});expect(registration.status()).toBe(202);
+ const challenge=await registration.json();const mailbox=await(await request.get('http://127.0.0.1:8025/api/v1/messages')).json();const message=mailbox.messages.find(m=>m.To.some(to=>to.Address===email));expect(message).toBeTruthy();const mail=await(await request.get('http://127.0.0.1:8025/api/v1/message/'+message.ID)).json();
+ expect((await request.post('http://127.0.0.1:3002/api/v1/auth/verify',{data:{challengeId:challenge.challengeId,code:mail.Text.match(/\b\d{6}\b/)[0]}})).status()).toBe(200);
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8081/sign-in');
+ await page.getByRole('textbox',{name:'Email',exact:true}).fill(email);
+ await page.getByLabel('Mật khẩu',{exact:true}).fill(password);
+ await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();
+ await expect(page.getByText('Vị trí của bạn ở đâu?',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Bỏ qua vị trí',exact:true}).click();await page.getByRole('button',{name:'Để sau',exact:true}).click();
+ await expect(page.getByText('Bạn chưa có lịch hẹn sắp tới',{exact:true}).filter({visible:true})).toBeVisible();
+ await imagesReady(page);await page.screenshot({path:'.local/screenshots/home-390.png',fullPage:true});
+ await page.getByRole('button',{name:'Tìm bác sĩ, bệnh viện, xét nghiệm',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Xem BS. Nguyễn Quốc Việt',exact:true})).toBeVisible();
+ await imagesReady(page);await page.screenshot({path:'.local/screenshots/search-390.png',fullPage:true});
+ await page.getByRole('textbox',{name:'Tìm bác sĩ, bệnh viện',exact:true}).fill('hoan my');
+ await expect(page.getByRole('button',{name:'Xem BV Hoàn Mỹ Đà Nẵng',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Xem Vinmec Đà Nẵng',exact:true})).toHaveCount(0);
+ await page.getByRole('textbox',{name:'Tìm bác sĩ, bệnh viện',exact:true}).fill('zznotfound');
+ await expect(page.getByText('Không tìm thấy kết quả',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Xóa từ khóa',exact:true}).click();
+ await page.getByRole('button',{name:'Xem BS. Nguyễn Quốc Việt',exact:true}).click();
+ await expect(page.getByText('Giới thiệu bác sĩ',{exact:true})).toBeVisible();
+ await imagesReady(page);await page.screenshot({path:'.local/screenshots/doctor-390.png',fullPage:true});
+ await expect(page.getByRole('button',{name:'Đặt lịch khám',exact:true})).toBeEnabled();
+ await page.getByRole('button',{name:'Quay lại',exact:true}).click();
+ await page.getByRole('button',{name:'Xem Vinmec Đà Nẵng',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Yêu thích Vinmec Đà Nẵng',exact:true})).toBeVisible();
+ await imagesReady(page);await page.screenshot({path:'.local/screenshots/hospital-390.png',fullPage:true});
+ const unlike=page.getByRole('button',{name:'Bỏ yêu thích Vinmec Đà Nẵng',exact:true});
+ if(await unlike.isVisible())await unlike.click();
+ await page.getByRole('button',{name:'Yêu thích Vinmec Đà Nẵng',exact:true}).click();
+ await expect(unlike).toBeVisible();
+ await page.getByRole('button',{name:'Quay lại',exact:true}).click();
+ await page.getByRole('button',{name:'Xem Vinmec Đà Nẵng',exact:true}).click();
+ await expect(unlike).toBeVisible();await unlike.click();
+ await page.getByRole('button',{name:'Quay lại',exact:true}).click();
+ await page.getByRole('button',{name:'Quay lại',exact:true}).click();
+ await page.getByRole('button',{name:'Xem tất cả: Bệnh viện tại Đà Nẵng',exact:true}).click();
+ await expect(page.getByText('8 bệnh viện tại Đà Nẵng',{exact:true})).toBeVisible();
+ await imagesReady(page);await page.screenshot({path:'.local/screenshots/hospitals-390.png',fullPage:true});
+ await page.getByRole('button',{name:'Quay lại',exact:true}).click();
+ await page.setViewportSize({width:320,height:640});
+ await expect(page.getByRole('button',{name:'Tài khoản',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await imagesReady(page);await page.screenshot({path:'.local/screenshots/home-320.png',fullPage:true});
+ await page.route('**/api/v1/discovery/home',route=>route.abort());
+ await page.getByRole('button',{name:'Tài khoản',exact:true}).click();
+ await expect(page.getByText(email,{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Trang chủ',exact:true}).filter({visible:true}).click();
+ await expect(page.getByRole('alert')).toContainText('Chưa tải được dữ liệu');
+ await page.unroute('**/api/v1/discovery/home');await page.getByRole('button',{name:'Thử lại',exact:true}).click();
+ await expect(page.getByText('Bạn chưa có lịch hẹn sắp tới',{exact:true}).filter({visible:true})).toBeVisible();
+ expect(errors).toEqual([]);
+});
+
+
+

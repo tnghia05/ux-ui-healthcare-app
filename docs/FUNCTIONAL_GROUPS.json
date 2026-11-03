@@ -1,0 +1,192 @@
+[
+  {
+    "id": "A",
+    "name": "Khởi động, tài khoản và cài đặt",
+    "order": 1,
+    "screens": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      51,
+      52,
+      57,
+      58
+    ],
+    "flow": "Khởi động → chào mừng/giới thiệu → đăng ký hoặc đăng nhập → OTP → hoàn thiện hồ sơ → quyền vị trí/thông báo → Trang chủ. Từ Tài khoản quay lại sửa hồ sơ, cài đặt, mật khẩu.",
+    "backend": "Auth, session, password recovery, profile, preferences; quyền hệ thống bị từ chối vẫn tiếp tục được."
+  },
+  {
+    "id": "B",
+    "name": "Người thân và quyền riêng tư",
+    "order": 2,
+    "screens": [
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68
+    ],
+    "flow": "Tài khoản → danh sách người thân → thêm → hồ sơ/sức khỏe → cấp quyền chăm sóc/chia sẻ → xem lịch sử → thu hồi quyền.",
+    "backend": "Patient ownership/caregiver grants, consent scopes, audit log; người thân xuất hiện trong bước chọn người khám."
+  },
+  {
+    "id": "C",
+    "name": "Khám phá bác sĩ và bệnh viện",
+    "order": 3,
+    "screens": [
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      46,
+      49,
+      50
+    ],
+    "flow": "Trang chủ → dịch vụ/tìm kiếm → lọc → bác sĩ/bệnh viện → các tab thông tin → yêu thích → đặt khám.",
+    "backend": "Catalog, search, filters, favorites, tọa độ; đúng ảnh và dữ liệu bệnh viện Đà Nẵng, bác sĩ Việt Nam."
+  },
+  {
+    "id": "D",
+    "name": "Ví, ưu đãi và bảo hiểm",
+    "order": 4,
+    "screens": [
+      53,
+      54,
+      55,
+      56,
+      83,
+      84,
+      100
+    ],
+    "flow": "Tài khoản → ví → nạp tiền; thêm bảo hiểm → xem dự tính; chọn ưu đãi/bảo hiểm trong luồng thanh toán.",
+    "backend": "Wallet ledger, coupon rules, insurance cards/estimates, payment adapter; dự tính không đồng nghĩa bảo hiểm đã duyệt."
+  },
+  {
+    "id": "E",
+    "name": "Đặt khám và thanh toán",
+    "order": 5,
+    "screens": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32
+    ],
+    "flow": "Chi tiết bác sĩ → ngày giờ → gói khám → người khám → phương thức thanh toán/thêm thẻ → xem lại → thanh toán → hóa đơn → lịch hẹn.",
+    "backend": "Slot holds, server-side price, patient permission, provider callback/idempotency, receipt. Không lưu số thẻ/CVV thô."
+  },
+  {
+    "id": "F",
+    "name": "Lịch hẹn, check-in, đổi/hủy/hoàn",
+    "order": 6,
+    "screens": [
+      33,
+      34,
+      35,
+      36,
+      42,
+      43,
+      44,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82
+    ],
+    "flow": "Danh sách sắp tới → chi tiết → chỉ đường → mã QR/đã đến → số thứ tự. Nhánh đổi lịch, hủy, hoàn tiền; kết quả phản ánh đúng danh sách tương ứng.",
+    "backend": "Appointment state machine, queue, signed check-in, reschedule, cancellation/refund rules; giữ chỗ mới an toàn khi đổi lịch."
+  },
+  {
+    "id": "G",
+    "name": "Đặt lịch xét nghiệm",
+    "order": 7,
+    "screens": [
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75,
+      76
+    ],
+    "flow": "Trang chủ/khám phá → danh sách xét nghiệm → chi tiết gói → phương thức lấy mẫu → cơ sở/địa chỉ → lịch → xác nhận → đặt thành công → theo dõi → kết quả 94–95.",
+    "backend": "Lab catalog, sampling method, home service area, lab booking and status; dùng lại patient/price/payment của nhóm E khi cần."
+  },
+  {
+    "id": "H",
+    "name": "Tư vấn và chăm sóc sau khám",
+    "order": 8,
+    "screens": [
+      37,
+      38,
+      39,
+      40,
+      41,
+      47,
+      48,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90
+    ],
+    "flow": "Lịch hẹn → trò chuyện → gọi thoại/video → kết thúc → tóm tắt → điều trị → đơn thuốc/chi tiết → lịch uống/nhắc → đánh giá bác sĩ hoặc bệnh viện.",
+    "backend": "Durable messages, authorized rooms/calls, clinician-authored records, medication reminders, review eligibility."
+  },
+  {
+    "id": "I",
+    "name": "Hồ sơ sức khỏe và tài liệu",
+    "order": 9,
+    "screens": [
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97,
+      98,
+      99
+    ],
+    "flow": "Tài khoản → tổng quan sức khỏe → dòng thời gian → lần khám → kết quả/chi tiết; xem dị ứng, tiêm chủng; kho tài liệu → tải lên → chia sẻ theo quyền nhóm B.",
+    "backend": "Patient-scoped clinical records, lab results, allergy/vaccine history, private file storage and validated upload."
+  },
+  {
+    "id": "J",
+    "name": "Thông báo và hỗ trợ",
+    "order": 10,
+    "screens": [
+      45,
+      59,
+      60
+    ],
+    "flow": "Thông báo → đúng lịch hẹn/kết quả/tin nhắn liên quan; Tài khoản → FAQ → liên hệ hỗ trợ → lưu yêu cầu.",
+    "backend": "Notification events/deep links, preferences, FAQ and persistent support tickets. Hạ tầng thông báo tích hợp sớm, không đợi làm màn 45."
+  }
+]

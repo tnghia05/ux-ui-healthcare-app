@@ -1,0 +1,53 @@
+import 'reflect-metadata';
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { Test } from '@nestjs/testing';
+import { MongooseModule,getConnectionToken } from '@nestjs/mongoose';
+import type { Connection } from 'mongoose';
+import { Types } from 'mongoose';
+import { AuthModule } from '../src/auth/auth.module.js';
+import { hashPassword } from '../src/auth/password.js';
+import { configureHttp } from '../src/http.js';
+test('profile HTTP validates, persists and prevents changes to another user or role',{skip:!process.env.TEST_MONGODB_URI},async()=>{
+ const module=await Test.createTestingModule({imports:[MongooseModule.forRoot(process.env.TEST_MONGODB_URI!),AuthModule]}).compile();
+ const app=module.createNestApplication();configureHttp(app,[]);await app.listen(0,'127.0.0.1');
+ const db=module.get<Connection>(getConnectionToken()).db!;
+ const suffix=new Types.ObjectId().toHexString();const email=`profile-${suffix}@example.com`,otherEmail=`other-${suffix}@example.com`;
+ const password='private-profile-password';
+ try {
+  const result=await db.collection('users').insertOne({email,name:'User A',passwordHash:await hashPassword(password),emailVerifiedAt:new Date()});
+  const other=await db.collection('users').insertOne({email:otherEmail,name:'User B',passwordHash:await hashPassword(password),emailVerifiedAt:new Date()});
+  const url=await app.getUrl();
+  const login=await (await fetch(url+'/api/v1/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})})).json();
+  const headers={'Content-Type':'application/json',Authorization:`Bearer ${login.accessToken}`};
+  const input={name:'Người dùng đã cập nhật',phone:'0901234567',birthDate:'2000-05-15',gender:'female'};
+  const patch=(body:object,auth=true)=>fetch(url+'/api/v1/auth/me',{method:'PATCH',headers:auth?headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  assert.equal((await patch(input,false)).status,401);
+  assert.equal((await patch({...input,role:'admin'})).status,400);
+  assert.equal((await patch({...input,userId:other.insertedId.toHexString()})).status,400);
+  assert.equal((await patch({...input,birthDate:'2099-01-01'})).status,400);
+  assert.equal((await patch({...input,birthDate:'2000-02-30'})).status,400);
+  assert.equal((await patch({...input,phone:'123'})).status,400);
+  assert.equal((await patch(input)).status,200);
+  const profile=await (await fetch(url+'/api/v1/auth/me',{headers})).json();
+  assert.equal(profile.name,input.name);assert.equal(profile.phone,input.phone);assert.equal(profile.birthDate,input.birthDate);assert.ok(profile.profileCompletedAt);assert.equal('passwordHash' in profile,false);
+  const preferences=(body:object)=>fetch(url+'/api/v1/auth/preferences',{method:'PATCH',headers,body:JSON.stringify(body)});
+  assert.equal((await preferences({locationMode:'device',latitude:91,longitude:108,locationPermission:'granted'})).status,400);
+  assert.equal((await preferences({locationMode:'device',latitude:16,longitude:108,locationPermission:'denied'})).status,400);
+  assert.equal((await preferences({locationMode:'device',latitude:16.05,longitude:108.2,locationPermission:'granted'})).status,200);
+  const device=await(await fetch(url+'/api/v1/auth/me',{headers})).json();assert.equal(device.preferences.latitude,16.05);
+  assert.equal((await preferences({locationMode:'manual',address:'Đường 30 Tháng 4, Đà Nẵng',locationPermission:'skipped'})).status,200);
+  const manual=await(await fetch(url+'/api/v1/auth/me',{headers})).json();assert.equal(manual.preferences.address,'Đường 30 Tháng 4, Đà Nẵng');assert.equal('latitude' in manual.preferences,false);
+  assert.equal((await preferences({locationMode:'none',locationPermission:'denied',notificationPermission:'skipped',setupCompleted:true})).status,200);
+  const skipped=await(await fetch(url+'/api/v1/auth/me',{headers})).json();assert.equal('address' in skipped.preferences,false);assert.equal(skipped.preferences.setupCompleted,true);
+  assert.equal((await preferences({setupCompleted:null})).status,400);
+  assert.equal((await preferences({role:'admin'})).status,400);
+  assert.equal((await db.collection('users').findOne({_id:other.insertedId}))!.name,'User B');
+  assert.equal((await db.collection('users').findOne({_id:result.insertedId}))!.role,undefined);
+ } finally {
+  const users=await db.collection('users').find({email:{$in:[email,otherEmail]}}).toArray();
+  await db.collection('sessions').deleteMany({userId:{$in:users.map(u=>u._id)}});
+  await db.collection('users').deleteMany({email:{$in:[email,otherEmail]}});
+  await app.close();
+ }
+});
